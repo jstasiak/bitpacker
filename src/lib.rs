@@ -28,9 +28,12 @@ impl Packer {
     pub fn pack(&mut self, value: u64, bits: usize) {
         assert!([8, 16, 24, 32, 40, 48, 56, 64].contains(&bits));
         let mut bits = bits;
+        let mut value = value;
         while bits > 0 {
             self._buffer.push(value as u8);
             bits -= 8;
+            self._byteoffset += 1;
+            value = value >> 8;
         }
     }
 
@@ -71,10 +74,18 @@ impl<'a> Unpacker<'a> {
 
     pub fn unpack(&mut self, bits: usize) -> u64 {
         assert!([8, 16, 24, 32, 40, 48, 56, 64].contains(&bits));
-        assert!(bits < self.remaining_bits());
+        assert!(bits <= self.remaining_bits());
         let mut bits = bits;
         let mut value: u64 = 0;
-        0
+        let mut factor = 0;
+        while bits > 0 {
+            let byte = self._buffer[self._byteoffset];
+            self._byteoffset += 1;
+            bits -= 8;
+            value += (byte as u64) << factor;
+            factor += 8;
+        }
+        value
     }
 }
 
@@ -109,6 +120,15 @@ mod tests {
 
     #[test]
     fn it_works() {
-        verify_numbers(&[]);
+        verify_numbers(&[
+            (1 << 6 + 1, 8),
+            (1 << 14 + 1, 16),
+            (1 << 22 + 1, 24),
+            (1 << 30 + 1, 32),
+            (1 << 38 + 1, 40),
+            (1 << 46 + 1, 48),
+            (1 << 54 + 1, 56),
+            (1 << 62 + 1, 64),
+        ]);
     }
 }
