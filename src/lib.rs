@@ -17,14 +17,6 @@ impl Packer {
         &self._buffer
     }
 
-    pub fn byteoffset(&self) -> usize {
-        self._byteoffset
-    }
-
-    pub fn bitoffset(&self) -> usize {
-        self._bitoffset
-    }
-
     pub fn pack(&mut self, value: u64, bits: usize) {
         assert!([8, 16, 24, 32, 40, 48, 56, 64].contains(&bits));
         let mut bits = bits;
@@ -55,13 +47,6 @@ impl<'a> Unpacker<'a> {
             _byteoffset: 0,
             _bitoffset: 0,
         }
-    }
-    pub fn byteoffset(&self) -> usize {
-        self._byteoffset
-    }
-
-    pub fn bitoffset(&self) -> usize {
-        self._bitoffset
     }
 
     pub fn total_bits(&self) -> usize {
