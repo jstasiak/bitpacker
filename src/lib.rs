@@ -85,7 +85,11 @@ mod tests {
     fn verify_numbers(numbers: &[(u64, usize)]) {
         let mut packer = Packer::new();
         let mut total_bits = 0usize;
-        for (number, bits) in numbers {
+        for (index, (number, bits)) in numbers.iter().enumerate() {
+            eprintln!(
+                "Packing iteration {}, packing {} bits of {}",
+                index, bits, number,
+            );
             packer.pack(*number, *bits);
             total_bits += bits;
             assert_eq!(packer.total_bits(), total_bits);
@@ -97,7 +101,8 @@ mod tests {
             assert_eq!(packer.buffer().len(), bytes_taken);
         }
         let mut unpacker = Unpacker::new(packer.buffer());
-        for (number, bits) in numbers {
+        for (index, (number, bits)) in numbers.iter().enumerate() {
+            eprintln!("Unpacking iteration {}, reading {}-bit number", index, bits,);
             assert_eq!(unpacker.unpack(*bits), *number);
         }
     }
