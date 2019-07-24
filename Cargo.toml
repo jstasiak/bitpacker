@@ -1,0 +1,11 @@
+[package]
+name = "bitpacker"
+version = "0.1.0"
+authors = ["Jakub Stasiak <jakub@stasiak.at>"]
+edition = "2018"
+license = "MIT"
+description = "Pack numbers tightly. In Rust."
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
