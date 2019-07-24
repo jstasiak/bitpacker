@@ -29,14 +29,14 @@ impl Packer {
         let mut value = value;
         while bits_to_write > 0 {
             let free_bits_left_this_byte = 8 - self._bitoffset;
-            let bits_to_write_this_byte = cmp::min(free_bits_left_this_byte, bits);
+            let bits_to_write_this_byte = cmp::min(free_bits_left_this_byte, bits_to_write);
             let mut byte = if self._bitoffset > 0 {
                 self._buffer[self._byteoffset]
             } else {
                 self._buffer.push(0);
                 0
             };
-            let source_bitmask = 1 << bits_to_write_this_byte - 1;
+            let source_bitmask = ((1u16 << bits_to_write_this_byte) - 1) as u8;
             dbg!(bin(source_bitmask));
             let source_chunk = value as u8 & source_bitmask;
             byte += source_chunk << (8 - self._bitoffset - bits_to_write_this_byte);
@@ -88,10 +88,12 @@ impl<'a> Unpacker<'a> {
         let mut factor = 0;
         while bits_to_read > 0 {
             let byte = self._buffer[self._byteoffset];
+            dbg!(bin(byte));
             let bits_available_this_byte = 8 - self._bitoffset;
             let bits_to_read_this_byte = cmp::min(bits_to_read, bits_available_this_byte);
             let remaining_bits = 8 - self._bitoffset - bits_to_read_this_byte;
-            let source_bitmask = (1 << bits_to_read_this_byte - 1) << remaining_bits;
+            let source_bitmask = (((1u16 << bits_to_read_this_byte) - 1) << remaining_bits) as u8;
+            dbg!(bin(source_bitmask));
             value += ((byte & source_bitmask) as u64) >> remaining_bits << factor;
             factor += bits_to_read_this_byte;
             self._bitoffset += bits_to_read_this_byte;
@@ -108,9 +110,10 @@ impl<'a> Unpacker<'a> {
 #[cfg(test)]
 mod tests {
     use crate::{Packer, Unpacker};
+    use std::cmp;
 
     fn verify_numbers(numbers: &[(u64, usize)]) {
-        eprintln!("Verifying numbers: {:?}", numbers);
+        eprintln!("\nVerifying numbers: {:?}", numbers);
         let mut packer = Packer::new();
         let mut total_bits = 0usize;
         for (index, (number, bits)) in numbers.iter().enumerate() {
@@ -149,5 +152,17 @@ mod tests {
         ]);
 
         verify_numbers(&[(0, 1), (1, 1), (2, 2)]);
+
+        for i in 1..65 {
+            for j in 1..65 {
+                for number in &[0, 1, 2, 3, 4, 1234, 65536, 1234567890, 1 << 63] {
+                    // min() calls so that we don't try to store more than the number of bits allows
+                    verify_numbers(&[
+                        (cmp::min(*number, 1 << (i - 1)), i),
+                        (cmp::min(*number, 1 << (j - 1)), j),
+                    ]);
+                }
+            }
+        }
     }
 }
