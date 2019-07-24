@@ -5,7 +5,13 @@ authors = ["Jakub Stasiak <jakub@stasiak.at>"]
 edition = "2018"
 license = "MIT"
 description = "Pack numbers tightly. In Rust."
+readme = "README.md"
+repository = "https://github.com/jstasiak/bitpacker"
+keywords = ["bitpack", "bitpacking", "bitpacker"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[badges]
+travis-ci = { repository = "jstasiak/bitpacker" }
 
 [dependencies]
