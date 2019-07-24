@@ -1,3 +1,9 @@
+use std::cmp;
+
+fn bin(byte: u8) -> String {
+    format!("{:#010b}", byte)
+}
+
 struct Packer {
     _buffer: Vec<u8>,
     _byteoffset: usize,
@@ -18,14 +24,31 @@ impl Packer {
     }
 
     pub fn pack(&mut self, value: u64, bits: usize) {
-        assert!([8, 16, 24, 32, 40, 48, 56, 64].contains(&bits));
-        let mut bits = bits;
+        assert!(bits > 0 && bits <= 64, "Invalid number of bits: {}", bits);
+        let mut bits_to_write = bits;
         let mut value = value;
-        while bits > 0 {
-            self._buffer.push(value as u8);
-            bits -= 8;
-            self._byteoffset += 1;
-            value = value >> 8;
+        while bits_to_write > 0 {
+            let free_bits_left_this_byte = 8 - self._bitoffset;
+            let bits_to_write_this_byte = cmp::min(free_bits_left_this_byte, bits);
+            let mut byte = if self._bitoffset > 0 {
+                self._buffer[self._byteoffset]
+            } else {
+                self._buffer.push(0);
+                0
+            };
+            let source_bitmask = 1 << bits_to_write_this_byte - 1;
+            dbg!(bin(source_bitmask));
+            let source_chunk = value as u8 & source_bitmask;
+            byte += source_chunk << (8 - self._bitoffset - bits_to_write_this_byte);
+            dbg!(bin(byte));
+            self._buffer[self._byteoffset] = byte;
+            bits_to_write -= bits_to_write_this_byte;
+            value = value >> bits_to_write_this_byte;
+            self._bitoffset += bits_to_write_this_byte;
+            if self._bitoffset == 8 {
+                self._bitoffset = 0;
+                self._byteoffset += 1;
+            }
         }
     }
 
@@ -58,17 +81,25 @@ impl<'a> Unpacker<'a> {
     }
 
     pub fn unpack(&mut self, bits: usize) -> u64 {
-        assert!([8, 16, 24, 32, 40, 48, 56, 64].contains(&bits));
+        assert!(bits > 0 && bits <= 64, "Invalid number of bits: {}", bits);
         assert!(bits <= self.remaining_bits());
-        let mut bits = bits;
+        let mut bits_to_read = bits;
         let mut value: u64 = 0;
         let mut factor = 0;
-        while bits > 0 {
+        while bits_to_read > 0 {
             let byte = self._buffer[self._byteoffset];
-            self._byteoffset += 1;
-            bits -= 8;
-            value += (byte as u64) << factor;
-            factor += 8;
+            let bits_available_this_byte = 8 - self._bitoffset;
+            let bits_to_read_this_byte = cmp::min(bits_to_read, bits_available_this_byte);
+            let remaining_bits = 8 - self._bitoffset - bits_to_read_this_byte;
+            let source_bitmask = (1 << bits_to_read_this_byte - 1) << remaining_bits;
+            value += ((byte & source_bitmask) as u64) >> remaining_bits << factor;
+            factor += bits_to_read_this_byte;
+            self._bitoffset += bits_to_read_this_byte;
+            if self._bitoffset == 8 {
+                self._bitoffset = 0;
+                self._byteoffset += 1;
+            }
+            bits_to_read -= bits_to_read_this_byte;
         }
         value
     }
@@ -79,6 +110,7 @@ mod tests {
     use crate::{Packer, Unpacker};
 
     fn verify_numbers(numbers: &[(u64, usize)]) {
+        eprintln!("Verifying numbers: {:?}", numbers);
         let mut packer = Packer::new();
         let mut total_bits = 0usize;
         for (index, (number, bits)) in numbers.iter().enumerate() {
@@ -115,5 +147,7 @@ mod tests {
             (1 << 54 + 1, 56),
             (1 << 62 + 1, 64),
         ]);
+
+        verify_numbers(&[(0, 1), (1, 1), (2, 2)]);
     }
 }
