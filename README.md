@@ -39,5 +39,5 @@ dbg!(unpacker.remaining_bits()); // 8, see above + we haven't unpacked anything 
 dbg!(unpacker.unpack(2)); // 2
 dbg!(unpacker.unpack(4)); // 7
 dbg!(unpacker.unpack(1)); // 1
-dbg!(unpacker.remaining_bits()); // 1, because there's one unused bit left. It's value is undefined.
+dbg!(unpacker.remaining_bits()); // 1, because there's one unused bit left. Its value is undefined.
 ```
