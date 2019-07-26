@@ -1,10 +1,10 @@
 use std::cmp;
 
-fn bin(byte: u8) -> String {
+pub fn bin(byte: u8) -> String {
     format!("{:#010b}", byte)
 }
 
-struct Packer {
+pub struct Packer {
     _buffer: Vec<u8>,
     _byteoffset: usize,
     _bitoffset: usize,
@@ -55,7 +55,7 @@ impl Packer {
     }
 }
 
-struct Unpacker<'a> {
+pub struct Unpacker<'a> {
     _buffer: &'a [u8],
     _byteoffset: usize,
     _bitoffset: usize,
